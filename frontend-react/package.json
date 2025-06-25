@@ -14,5 +14,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build"
-  }
+  },
+  "proxy": "http://apigateway:3001"
 }
+
