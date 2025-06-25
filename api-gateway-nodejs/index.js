@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Login
+// ✅ Login Route
 app.post("/login", async (req, res) => {
     try {
         const response = await axios.post("http://order-processor-python:5002/validateuser", req.body);
@@ -17,7 +17,7 @@ app.post("/login", async (req, res) => {
     }
 });
 
-// ✅ Get products
+// ✅ Get Products Route
 app.get("/products", async (req, res) => {
     try {
         const response = await axios.get("http://order-processor-python:5002/products");
@@ -28,7 +28,7 @@ app.get("/products", async (req, res) => {
     }
 });
 
-// ✅ Submit order (updated structure validation)
+// ✅ Submit Order Route
 app.post("/submitorder", async (req, res) => {
     try {
         const { user_id, items, total } = req.body;
@@ -45,8 +45,6 @@ app.post("/submitorder", async (req, res) => {
             return res.status(400).json({ message: "Invalid item in order" });
         }
 
-        console.log("➡️ Forwarding order:", req.body);
-
         const response = await axios.post("http://order-processor-python:5002/submitorder", req.body);
         res.json(response.data);
     } catch (error) {
@@ -55,11 +53,12 @@ app.post("/submitorder", async (req, res) => {
     }
 });
 
-// ✅ Initiate payment
+// ✅ Initiate Payment Route
 app.post('/initiatepayment', async (req, res) => {
     const { username, amount } = req.body;
 
     try {
+        // Check compliance
         const complianceResponse = await axios.post('http://compliance:80/compliancecheck', {
             KycApproved: true,
             Balance: 1000
@@ -69,7 +68,8 @@ app.post('/initiatepayment', async (req, res) => {
             return res.status(400).json({ error: 'Compliance check failed' });
         }
 
-        const orderResponse = await axios.post('http://orderprocessor:5001/processpayment', {
+        // Process payment
+        const orderResponse = await axios.post('http://order-processor-python:5002/processpayment', {
             username,
             amount
         });
@@ -83,3 +83,4 @@ app.post('/initiatepayment', async (req, res) => {
 });
 
 app.listen(3001, () => console.log('🌐 API Gateway running on port 3001'));
+
