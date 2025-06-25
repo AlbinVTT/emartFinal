@@ -1,4 +1,3 @@
-
 version: '3'
 services:
   frontend:
@@ -28,7 +27,6 @@ services:
       - PGUSER=emartuser
       - PGPASSWORD=emartpass
       - PGDATABASE=emartdb
-      - ledger
 
   compliance:
     build: ./compliance-service-dotnet
@@ -39,7 +37,6 @@ services:
     build: ./ledger-service-java
     ports:
       - "5011:5003"
-
 
   postgres:
     image: postgres:13
