@@ -17,7 +17,8 @@ function App() {
 
   const login = async () => {
     try {
-      const response = await axios.post('http://localhost:3001/login', {
+      // Use RELATIVE URL here!
+      const response = await axios.post('/login', {
         user_id: username,
         password: password
       });
@@ -88,7 +89,8 @@ function App() {
     };
 
     try {
-      const response = await axios.post("http://localhost:3001/submitorder", orderPayload);
+      // Use RELATIVE URL here!
+      const response = await axios.post("/submitorder", orderPayload);
       console.log("✅ Order submitted:", response.data);
 
       if (response.data.status === 'success') {
@@ -162,3 +164,4 @@ function App() {
 }
 
 export default App;
+
