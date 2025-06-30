@@ -62,20 +62,22 @@ app.post('/initiatepayment', async (req, res) => {
     }
 
     try {
-        // ✅ Send correct field expected by .NET (id, not username)
         const complianceResponse = await axios.post('http://compliance:80/ComplianceCheck', {
             id: user_id
         });
 
         if (complianceResponse.data.status !== 'Approved') {
-            return res.status(400).json({ error: 'Compliance check failed' });
+            return res.status(400).json({
+                error: 'Compliance check failed',
+                reason: complianceResponse.data.reason || 'Unknown reason'
+            });
         }
 
         return res.json({ message: 'Payment successful' });
     } catch (error) {
         console.error("Payment error:", error.message);
-        return res.status(500).json({ error: 'Payment processing failed' });
+        const reason = error?.response?.data?.reason || 'Payment processing failed';
+        return res.status(500).json({ error: reason });
     }
 });
-
 app.listen(3001, () => console.log('🌐 API Gateway running on port 3001'));
