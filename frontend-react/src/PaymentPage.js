@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './PaymentPage.css';
 import confetti from 'canvas-confetti';
+import axios from 'axios';
 
-function PaymentPage({ cartItems, onCheckout, setCart }) {
+function PaymentPage({ cartItems, setCart }) {
   const [method, setMethod] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [username, setUsername] = useState('');
   const navigate = useNavigate();
 
   // Group identical items
@@ -23,18 +25,36 @@ function PaymentPage({ cartItems, onCheckout, setCart }) {
   const delivery = 40;
   const total = subtotal + delivery;
 
+  useEffect(() => {
+    // Get username from localStorage or sessionStorage (set in App.js after login)
+    const storedUser = localStorage.getItem('username');
+    if (storedUser) {
+      setUsername(storedUser);
+    }
+  }, []);
+
   const handlePayment = () => {
     setIsProcessing(true);
 
     setTimeout(async () => {
       try {
-        confetti({ particleCount: 80, spread: 60 });
-        await onCheckout();         // Wait for successful backend submission
-        setCart([]);                // Clear cart only after success
-        navigate('/confirmation');  // Redirect to confirmation page
+        // Call /initiatepayment instead of onCheckout
+        const response = await axios.post('/initiatepayment', {
+          username,
+          amount: total
+        });
+
+        if (response?.data?.message === 'Payment successful') {
+          confetti({ particleCount: 100, spread: 70 });
+          setCart([]); // clear cart after success
+          navigate('/confirmation');
+        } else {
+          alert("❌ Payment was not successful.");
+        }
       } catch (err) {
+        console.error("Payment error:", err.message);
         alert("❌ Order failed, please try again.");
-        setIsProcessing(false);     // Re-enable button
+        setIsProcessing(false);
       }
     }, 2000);
   };
