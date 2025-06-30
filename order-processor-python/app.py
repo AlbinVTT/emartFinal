@@ -1,14 +1,3 @@
-Here’s your updated `app.py`, modified to:
-
-✅ **Remove direct DB writes for orders**
-✅ **Forward each order item to the Java Ledger service via HTTP POST**
-✅ **Retain login + table creation logic**
-
----
-
-### ✅ Updated `app.py` (only `/submitorder` changed)
-
-```python
 import os
 import time
 from flask import Flask, request, jsonify
@@ -114,16 +103,3 @@ def submit_order():
 if __name__ == "__main__":
     print("🚀 Starting Flask on port 5002")
     app.run(host="0.0.0.0", port=5002)
-```
-
----
-
-### 🔁 Summary of Changes
-
-* Removed DB insert from Python
-* Each item is sent to Java at: `http://ledger-service-java:8080/record`
-* Handles partial success/failure gracefully
-
-Let me know if you'd like logging, retries, or response validation added.
-
-
