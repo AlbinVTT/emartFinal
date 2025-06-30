@@ -19,7 +19,7 @@ body {
   color: #333;
 }
 
-/* 👇 Added for animated logo + title */
+/* 👇 Animated logo */
 .logo {
   width: 80px;
   margin: 0 auto 0.5rem;
@@ -71,7 +71,7 @@ p {
   font-weight: 500;
 }
 
-/* ✨ Register link style */
+/* ✨ Register link */
 .register-link {
   margin-top: 1rem;
   color: #007bff;
@@ -85,10 +85,12 @@ p {
   color: #0056b3;
 }
 
-/* 🧭 Nav Bar Styling */
+/* 🧭 Nav Bar */
 .top-nav {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 1rem;
   padding: 1rem;
   background-color: #fff;
@@ -97,6 +99,12 @@ p {
   position: sticky;
   top: 0;
   z-index: 100;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .nav-link {
@@ -129,7 +137,24 @@ p {
   margin-left: 0.25rem;
   font-weight: bold;
 }
-/* Colorful eMart bouncing title */
+
+/* 🚪 Logout Button */
+.logout-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: #c82333;
+}
+
+/* 🎨 eMart colorful title */
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
@@ -150,7 +175,6 @@ p {
   font-family: 'Segoe UI', sans-serif;
 }
 
-/* Per-letter bounce delay */
 .multicolor-title span:nth-child(1) { animation-delay: 0s; }
 .multicolor-title span:nth-child(2) { animation-delay: 0.1s; }
 .multicolor-title span:nth-child(3) { animation-delay: 0.2s; }
@@ -163,13 +187,12 @@ p {
 .red { color: #dc3545; }
 .purple { color: #6f42c1; }
 
-/* 🔗 Brand logo + animated title for top-left corner */
+/* 🔗 Brand logo + animated title (top left corner) */
 .brand {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
-  margin-right: auto;
 }
 
 .brand-logo {
@@ -194,21 +217,13 @@ p {
   font-size: 1.4rem;
 }
 
-/* Per-letter delay for bounce */
 .brand-title span:nth-child(1) { animation-delay: 0s; }
 .brand-title span:nth-child(2) { animation-delay: 0.1s; }
 .brand-title span:nth-child(3) { animation-delay: 0.2s; }
 .brand-title span:nth-child(4) { animation-delay: 0.3s; }
 .brand-title span:nth-child(5) { animation-delay: 0.4s; }
 
-/* Responsive padding for top-nav when logo is present */
-.top-nav {
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-/* Optional: make sure nav links don’t crowd on small screens */
+/* 📱 Responsive */
 @media (max-width: 600px) {
   .top-nav {
     flex-direction: column;
@@ -218,5 +233,9 @@ p {
 
   .brand-title {
     font-size: 1.2rem;
+  }
+
+  .logout-btn {
+    width: 100%;
   }
 }
