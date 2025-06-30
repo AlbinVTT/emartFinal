@@ -1,10 +1,12 @@
 import os
 import time
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import psycopg2
 import requests
 
 app = Flask(__name__)
+CORS(app)
 
 # ✅ Database connection with retry logic
 conn = None
@@ -33,14 +35,14 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(100),
     email VARCHAR(100),
     password VARCHAR(100),
-    kyc_approved BOOLEAN DEFAULT FALSE,
+    kyc_verified BOOLEAN DEFAULT FALSE,
     balance NUMERIC DEFAULT 0.0
 )
 """)
 cursor.execute("SELECT COUNT(*) FROM users")
 if cursor.fetchone()[0] == 0:
     cursor.execute("""
-    INSERT INTO users (id, name, email, password, kyc_approved, balance) VALUES
+    INSERT INTO users (id, name, email, password, kyc_verified, balance) VALUES
     ('u1', 'Alice', 'alice@example.com', 'pass123', TRUE, 50000),
     ('u2', 'Bob', 'bob@example.com', 'pass123', FALSE, 20000),
     ('u3', 'Charlie', 'charlie@example.com', 'pass123', TRUE, 8000)
@@ -48,6 +50,11 @@ if cursor.fetchone()[0] == 0:
     conn.commit()
     print("🧑‍💻 Default users seeded")
 cursor.close()
+
+# ✅ Health check
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok"}), 200
 
 # ✅ User Login Route
 @app.route("/validateuser", methods=["POST"])
@@ -61,7 +68,7 @@ def validate_user():
     user = cursor.fetchone()
     cursor.close()
 
-    print("🔐 VALIDATE:", user_id, password, "FOUND" if user else "NOT FOUND")
+    print(f"🔐 VALIDATE: {user_id} ->", "FOUND" if user else "NOT FOUND")
 
     if user:
         return jsonify({"status": "success", "user": user_id})
@@ -72,7 +79,7 @@ def validate_user():
 @app.route("/userdetails/<user_id>", methods=["GET"])
 def get_user_details(user_id):
     cursor = conn.cursor()
-    cursor.execute("SELECT kyc_approved, balance FROM users WHERE id = %s", (user_id,))
+    cursor.execute("SELECT kyc_verified, balance FROM users WHERE id = %s", (user_id,))
     result = cursor.fetchone()
     cursor.close()
 
@@ -80,7 +87,7 @@ def get_user_details(user_id):
         kyc, balance = result
         return jsonify({
             "user_id": user_id,
-            "kyc_approved": kyc,
+            "kyc_verified": kyc,
             "balance": float(balance)
         })
     else:
