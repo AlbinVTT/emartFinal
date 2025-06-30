@@ -7,6 +7,14 @@ import OrderConfirmation from './OrderConfirmation';
 import PaymentPage from './PaymentPage';
 import axios from 'axios';
 
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
+  );
+}
+
 function AppContent() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +30,7 @@ function AppContent() {
     if (storedUser) {
       setUsername(storedUser);
       setIsLoggedIn(true);
-      navigate('/'); // redirect to products if already logged in
+      navigate('/');
     }
   }, [navigate]);
 
@@ -37,7 +45,7 @@ function AppContent() {
         setIsLoggedIn(true);
         localStorage.setItem('username', username);
         setError('');
-        navigate('/'); // 👈 Redirect to Products page
+        navigate('/'); // Navigate to products after login
       } else {
         setError('❌ Invalid username or password');
       }
@@ -52,6 +60,7 @@ function AppContent() {
     setUsername('');
     setPassword('');
     localStorage.removeItem('username');
+    navigate('/'); // Ensure redirection to login
   };
 
   const addToCart = (product) => {
@@ -184,15 +193,6 @@ function AppContent() {
         </Routes>
       </div>
     )
-  );
-}
-
-// ⛳ Wrapping App with Router for `useNavigate`
-function App() {
-  return (
-    <Router>
-      <AppContent />
-    </Router>
   );
 }
 
