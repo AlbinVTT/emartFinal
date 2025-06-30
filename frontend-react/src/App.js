@@ -178,10 +178,10 @@ function AppContent() {
           </div>
 
           <div className="nav-links">
-            <Link to="/" className="nav-link product-link">🛍️ Products</Link>
-            <Link to="/cart" className="nav-link cart-link">🛒 Cart <span className="cart-count">({cart.length})</span></Link>
-            <button className="logout-btn" onClick={logout}>🚪 Logout</button>
-          </div>
+  <button className="nav-link product-link" onClick={() => navigate('/')}>🛍️ Products</button>
+  <button className="nav-link cart-link" onClick={() => navigate('/cart')}>🛒 Cart <span className="cart-count">({cart.length})</span></button>
+  <button className="logout-btn" onClick={logout}>🚪 Logout</button>
+</div>
         </nav>
 
         <Routes>
