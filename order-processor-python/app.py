@@ -1,7 +1,19 @@
+Here’s your updated `app.py`, modified to:
+
+✅ **Remove direct DB writes for orders**
+✅ **Forward each order item to the Java Ledger service via HTTP POST**
+✅ **Retain login + table creation logic**
+
+---
+
+### ✅ Updated `app.py` (only `/submitorder` changed)
+
+```python
 import os
 import time
 from flask import Flask, request, jsonify
 import psycopg2
+import requests
 
 app = Flask(__name__)
 
@@ -63,7 +75,7 @@ def validate_user():
     else:
         return jsonify({"status": "failed"}), 401
 
-# ✅ Submit Order Route
+# ✅ Submit Order Route (Updated to call Java Ledger)
 @app.route("/submitorder", methods=["POST"])
 def submit_order():
     data = request.json
@@ -74,41 +86,44 @@ def submit_order():
     if not user_id or not items:
         return jsonify({"status": "failed", "message": "Missing user_id or items"}), 400
 
-    cursor = conn.cursor()
-
-    # Ensure orders table exists
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS orders (
-            id SERIAL PRIMARY KEY,
-            user_id TEXT,
-            product_id TEXT,
-            name TEXT,
-            quantity INTEGER,
-            price NUMERIC,
-            total_amount NUMERIC,
-            order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-
+    # Forward each item to Java Ledger via POST
+    success_count = 0
     for item in items:
-        product_id = item.get("product_id")
-        name = item.get("name")
-        quantity = item.get("quantity", 1)
-        price = item.get("price", 0.0)
+        payload = {
+            "user_id": user_id,
+            "product_id": item.get("product_id"),
+            "name": item.get("name"),
+            "quantity": item.get("quantity", 1),
+            "price": item.get("price", 0.0),
+            "total_amount": total_amount
+        }
+        try:
+            response = requests.post("http://ledger-service-java:8080/record", json=payload)
+            print("📤 Sent to Ledger:", payload, "✅" if response.ok else "❌")
+            if response.ok:
+                success_count += 1
+        except Exception as e:
+            print("❌ Error sending to Ledger:", str(e))
 
-        cursor.execute("""
-            INSERT INTO orders (user_id, product_id, name, quantity, price, total_amount)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (user_id, product_id, name, quantity, price, total_amount))
-
-    conn.commit()
-    cursor.close()
-
-    print("✅ ORDER ADDED:", user_id, len(items), "items, Total:", total_amount)
-    return jsonify({"status": "success", "message": "Order recorded"}), 200
+    return jsonify({
+        "status": "success" if success_count == len(items) else "partial",
+        "message": f"{success_count}/{len(items)} items recorded"
+    }), 200 if success_count > 0 else 500
 
 # ✅ Start Flask
 if __name__ == "__main__":
     print("🚀 Starting Flask on port 5002")
     app.run(host="0.0.0.0", port=5002)
+```
+
+---
+
+### 🔁 Summary of Changes
+
+* Removed DB insert from Python
+* Each item is sent to Java at: `http://ledger-service-java:8080/record`
+* Handles partial success/failure gracefully
+
+Let me know if you'd like logging, retries, or response validation added.
+
 
