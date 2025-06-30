@@ -64,7 +64,7 @@ def validate_user():
     else:
         return jsonify({"status": "failed"}), 401
 
-# ✅ Submit Order Route (Updated to call Java Ledger)
+# ✅ Submit Order Route with retry logic for Java Ledger
 @app.route("/submitorder", methods=["POST"])
 def submit_order():
     data = request.json
@@ -75,8 +75,9 @@ def submit_order():
     if not user_id or not items:
         return jsonify({"status": "failed", "message": "Missing user_id or items"}), 400
 
-    # Forward each item to Java Ledger via POST
+    LEDGER_URL = os.environ.get("LEDGER_URL", "http://ledger-service-java:8080")
     success_count = 0
+
     for item in items:
         payload = {
             "user_id": user_id,
@@ -86,13 +87,19 @@ def submit_order():
             "price": item.get("price", 0.0),
             "total_amount": total_amount
         }
-        try:
-            response = requests.post("http://ledger-service-java:8080/record", json=payload)
-            print("📤 Sent to Ledger:", payload, "✅" if response.ok else "❌")
-            if response.ok:
-                success_count += 1
-        except Exception as e:
-            print("❌ Error sending to Ledger:", str(e))
+
+        for attempt in range(3):
+            try:
+                response = requests.post(f"{LEDGER_URL}/record", json=payload, timeout=5)
+                if response.ok:
+                    print(f"📤 Item sent to Ledger (attempt {attempt+1}):", payload)
+                    success_count += 1
+                    break
+                else:
+                    print(f"⚠️ Ledger response error (attempt {attempt+1}): {response.status_code}")
+            except Exception as e:
+                print(f"❌ Ledger request failed (attempt {attempt+1}):", str(e))
+            time.sleep(2 ** attempt)  # 1s, 2s, 4s backoff
 
     return jsonify({
         "status": "success" if success_count == len(items) else "partial",
