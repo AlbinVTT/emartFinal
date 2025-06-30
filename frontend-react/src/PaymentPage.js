@@ -31,36 +31,32 @@ function PaymentPage({ cartItems, setCart, setOrder }) {
     }
   }, []);
 
-  const handlePayment = () => {
-    setIsProcessing(true);
+const handlePayment = () => {
+  setIsProcessing(true);
 
-    setTimeout(async () => {
-      try {
-        const response = await axios.post('/initiatepayment', {
-          user_id: username,
-          amount: total
-        });
+  setTimeout(async () => {
+    try {
+      const response = await axios.post('/initiatepayment', {
+        user_id: username,
+        amount: total
+      });
 
-        if (response?.data?.message === 'Payment successful') {
-          // Set the order info before navigating
-          setOrder({
-            items,
-            total
-          });
-
-          confetti({ particleCount: 100, spread: 70 });
-          setCart([]);
-          navigate('/confirmation');
-        } else {
-          alert("❌ Payment was not successful.");
-        }
-      } catch (err) {
-        console.error("Payment error:", err.message);
-        alert("❌ Order failed, please try again.");
-        setIsProcessing(false);
+      if (response?.data?.message === 'Payment successful') {
+        setOrder({ items, total });
+        confetti({ particleCount: 100, spread: 70 });
+        setCart([]);
+        navigate('/confirmation');
+      } else {
+        alert("❌ Payment was not successful.");
       }
-    }, 2000);
-  };
+    } catch (err) {
+      console.error("Payment error:", err);
+      const reason = err?.response?.data?.reason || err?.response?.data?.error || "Order failed, please try again.";
+      alert(`❌ Payment failed: ${reason}`);
+      setIsProcessing(false);
+    }
+  }, 2000);
+};
 
   return (
     <div className="payment-wrapper">
