@@ -175,7 +175,7 @@ function App() {
           <Routes>
             <Route path="/" element={<ProductList onAddToCart={addToCart} />} />
             <Route path="/cart" element={<Cart cartItems={cart} onUpdateQuantity={handleUpdateQuantity} />} />
-            <Route path="/payment" element={<PaymentPage cartItems={cart} setCart={setCart} onCheckout={handleCheckout} />} />
+            <Route path="/payment" element={<PaymentPage cartItems={cart} setCart={setCart} setOrder={setOrder} />} />
             <Route path="/confirmation" element={<OrderConfirmation order={order} />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
