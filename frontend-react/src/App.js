@@ -25,12 +25,16 @@ function MainApp() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('username');
-    if (storedUser) {
-      setUsername(storedUser);
-      setIsLoggedIn(true);
-    }
-  }, []);
+  const storedUser = localStorage.getItem('username');
+  if (storedUser) {
+    // Optional: validate session via API
+    setUsername(storedUser);
+    setIsLoggedIn(true);
+    navigate('/');
+  } else {
+    navigate('/'); // force show login page
+  }
+}, []);
 
   const login = async () => {
     try {
@@ -56,12 +60,14 @@ function MainApp() {
   };
 
   const logout = () => {
-    setIsLoggedIn(false);
-    setUsername('');
-    setPassword('');
-    localStorage.removeItem('username');
-    navigate('/');
-  };
+  setIsLoggedIn(false);
+  setUsername('');
+  setPassword('');
+  setCart([]); // Clear cart on logout
+  localStorage.clear(); // Not just username
+  navigate('/'); // Redirect to login
+};
+
 
   const addToCart = (product) => {
     setCart([...cart, product]);
