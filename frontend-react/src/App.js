@@ -42,6 +42,8 @@ function MainApp() {
       if (response.data.status === 'success') {
         setIsLoggedIn(true);
         localStorage.setItem('username', username);
+        setCart([]);         // ✅ Clear cart
+        setOrder({ items: [], total: 0 }); // ✅ Clear previous order
         setError('');
         navigate('/');
       } else {
