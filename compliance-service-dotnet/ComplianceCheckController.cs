@@ -18,8 +18,8 @@ namespace ComplianceService.Controllers
                 conn.Open();
 
                 using var cmd = new NpgsqlCommand(
-                    "SELECT kyc_approved, balance FROM users WHERE id = @username", conn);
-                cmd.Parameters.AddWithValue("username", req.Username);
+                    "SELECT kyc_verified, balance FROM users WHERE id = @id", conn);
+                cmd.Parameters.AddWithValue("id", req.Id);
 
                 using var reader = cmd.ExecuteReader();
 
@@ -28,10 +28,10 @@ namespace ComplianceService.Controllers
                     return Unauthorized(new { status = "Rejected", reason = "User not found" });
                 }
 
-                bool kycApproved = reader.GetBoolean(0);
+                bool kycVerified = reader.GetBoolean(0);
                 decimal balance = reader.GetDecimal(1);
 
-                if (kycApproved && balance >= 100)
+                if (kycVerified && balance >= 100)
                     return Ok(new { status = "Approved" });
 
                 return BadRequest(new { status = "Rejected", reason = "Compliance criteria not met" });
@@ -44,7 +44,7 @@ namespace ComplianceService.Controllers
 
         public class UserRequest
         {
-            public string Username { get; set; }
+            public string Id { get; set; }
         }
     }
 }
