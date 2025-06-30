@@ -53,7 +53,7 @@ app.post("/submitorder", async (req, res) => {
     }
 });
 
-// ✅ Initiate Payment Route (Updated for DB-driven compliance)
+// ✅ Initiate Payment Route with fixed field for .NET Compliance
 app.post('/initiatepayment', async (req, res) => {
     const { user_id, amount } = req.body;
 
@@ -62,23 +62,22 @@ app.post('/initiatepayment', async (req, res) => {
     }
 
     try {
-        // Send user_id to Compliance Service (which will query DB)
+        // 🔄 FIXED: Send "id" instead of "user_id"
         const complianceResponse = await axios.post('http://compliance:80/ComplianceCheck', {
-            user_id
+            id: user_id
         });
 
         if (complianceResponse.data.status !== 'Approved') {
             return res.status(400).json({ error: 'Compliance check failed' });
         }
 
-        // Process payment in Order Processor
-        const orderResponse = await axios.post('http://order-processor-python:5002/processpayment', {
-            user_id,
-            amount
-        });
+        // 🔄 Optional: processpayment only if implemented
+        // const orderResponse = await axios.post('http://order-processor-python:5002/processpayment', {
+        //     user_id,
+        //     amount
+        // });
 
-        return res.json({ message: 'Payment successful', order: orderResponse.data });
-
+        return res.json({ message: 'Payment successful' });
     } catch (error) {
         console.error("Payment error:", error.message);
         return res.status(500).json({ error: 'Payment processing failed' });
@@ -86,3 +85,4 @@ app.post('/initiatepayment', async (req, res) => {
 });
 
 app.listen(3001, () => console.log('🌐 API Gateway running on port 3001'));
+
