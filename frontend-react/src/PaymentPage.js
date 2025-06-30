@@ -8,6 +8,8 @@ function PaymentPage({ cartItems, setCart, setOrder }) {
   const [method, setMethod] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [username, setUsername] = useState('');
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState('');
   const navigate = useNavigate();
 
   const grouped = cartItems.reduce((acc, item) => {
@@ -31,32 +33,39 @@ function PaymentPage({ cartItems, setCart, setOrder }) {
     }
   }, []);
 
-const handlePayment = () => {
-  setIsProcessing(true);
+  const handlePayment = () => {
+    setIsProcessing(true);
 
-  setTimeout(async () => {
-    try {
-      const response = await axios.post('/initiatepayment', {
-        user_id: username,
-        amount: total
-      });
+    setTimeout(async () => {
+      try {
+        const response = await axios.post('/initiatepayment', {
+          user_id: username,
+          amount: total
+        });
 
-      if (response?.data?.message === 'Payment successful') {
-        setOrder({ items, total });
-        confetti({ particleCount: 100, spread: 70 });
-        setCart([]);
-        navigate('/confirmation');
-      } else {
-        alert("❌ Payment was not successful.");
+        if (response?.data?.message === 'Payment successful') {
+          setOrder({ items, total });
+          confetti({ particleCount: 100, spread: 70 });
+          setCart([]);
+          navigate('/confirmation');
+        } else {
+          showErrorPopup("❌ Payment was not successful.");
+        }
+      } catch (err) {
+        console.error("Payment error:", err);
+        const reason = err?.response?.data?.reason || err?.response?.data?.error || "Order failed, please try again.";
+        showErrorPopup(`❌ ${reason}`);
+      } finally {
+        setIsProcessing(false);
       }
-    } catch (err) {
-      console.error("Payment error:", err);
-      const reason = err?.response?.data?.reason || err?.response?.data?.error || "Order failed, please try again.";
-      alert(`❌ Payment failed: ${reason}`);
-      setIsProcessing(false);
-    }
-  }, 2000);
-};
+    }, 2000);
+  };
+
+  const showErrorPopup = (message) => {
+    setPopupMessage(message);
+    setShowPopup(true);
+    setTimeout(() => setShowPopup(false), 3000); // Auto-close after 3s
+  };
 
   return (
     <div className="payment-wrapper">
@@ -127,6 +136,15 @@ const handlePayment = () => {
       </button>
 
       {isProcessing && <div className="payment-progress"><div className="bar" /></div>}
+
+      {/* 🔔 Compliance Popup */}
+      {showPopup && (
+        <div className="popup-overlay">
+          <div className="popup-content">
+            <p>{popupMessage}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
