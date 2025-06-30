@@ -17,7 +17,6 @@ function App() {
 
   const login = async () => {
     try {
-      // Use RELATIVE URL here!
       const response = await axios.post('/login', {
         user_id: username,
         password: password
@@ -25,6 +24,7 @@ function App() {
 
       if (response.data.status === 'success') {
         setIsLoggedIn(true);
+        localStorage.setItem('username', username); // ✅ Store username for later use
         setError('');
       } else {
         setError('❌ Invalid username or password');
@@ -58,56 +58,55 @@ function App() {
   };
 
   const handleCheckout = async () => {
-  if (cart.length === 0) {
-    alert("🛒 Cart is empty, cannot checkout.");
-    return;
-  }
-
-  const groupedItems = cart.reduce((acc, item) => {
-    if (acc[item.id]) {
-      acc[item.id].quantity += 1;
-    } else {
-      acc[item.id] = { ...item, quantity: 1 };
+    if (cart.length === 0) {
+      alert("🛒 Cart is empty, cannot checkout.");
+      return;
     }
-    return acc;
-  }, {});
 
-  const items = Object.values(groupedItems);
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const deliveryFee = 40;
-  const totalAmount = subtotal + deliveryFee;
+    const groupedItems = cart.reduce((acc, item) => {
+      if (acc[item.id]) {
+        acc[item.id].quantity += 1;
+      } else {
+        acc[item.id] = { ...item, quantity: 1 };
+      }
+      return acc;
+    }, {});
 
-  const orderPayload = {
-    user_id: username,
-    items: items.map(item => ({
-      product_id: item.id || '',
-      name: item.name || '',
-      quantity: item.quantity || 1,
-      price: item.price || 0
-    })),
-    total: totalAmount
-  };
+    const items = Object.values(groupedItems);
+    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const deliveryFee = 40;
+    const totalAmount = subtotal + deliveryFee;
 
-  try {
-    const paymentResp = await axios.post('/initiatepayment', {
+    const orderPayload = {
       user_id: username,
-      amount: totalAmount
-    });
+      items: items.map(item => ({
+        product_id: item.id || '',
+        name: item.name || '',
+        quantity: item.quantity || 1,
+        price: item.price || 0
+      })),
+      total: totalAmount
+    };
 
-    const orderResp = await axios.post("/submitorder", orderPayload);
+    try {
+      const paymentResp = await axios.post('/initiatepayment', {
+        user_id: username,
+        amount: totalAmount
+      });
 
-    if (orderResp.data.status === 'success') {
-      setOrder({ items, total: totalAmount });
-      setCart([]);
-    } else {
-      alert("Order failed at server.");
+      const orderResp = await axios.post("/submitorder", orderPayload);
+
+      if (orderResp.data.status === 'success') {
+        setOrder({ items, total: totalAmount });
+        setCart([]);
+      } else {
+        alert("Order failed at server.");
+      }
+    } catch (err) {
+      console.error("❌ Checkout failed:", err.message);
+      alert("Checkout failed");
     }
-  } catch (err) {
-    console.error("❌ Checkout failed:", err.message);
-    alert("Checkout failed");
-  }
-};
-
+  };
 
   return (
     <Router>
@@ -168,4 +167,3 @@ function App() {
 }
 
 export default App;
-
