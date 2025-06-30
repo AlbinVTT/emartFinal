@@ -53,7 +53,7 @@ app.post("/submitorder", async (req, res) => {
     }
 });
 
-// ✅ Initiate Payment Route - fixed username field
+// ✅ Initiate Payment Route (Fixed 'id' field)
 app.post('/initiatepayment', async (req, res) => {
     const { user_id, amount } = req.body;
 
@@ -62,20 +62,14 @@ app.post('/initiatepayment', async (req, res) => {
     }
 
     try {
-        // 🔄 FIX: Send "username" field, not "id"
+        // ✅ Send correct field expected by .NET (id, not username)
         const complianceResponse = await axios.post('http://compliance:80/ComplianceCheck', {
-            username: user_id
+            id: user_id
         });
 
         if (complianceResponse.data.status !== 'Approved') {
             return res.status(400).json({ error: 'Compliance check failed' });
         }
-
-        // (Optional) processpayment
-        // const orderResponse = await axios.post('http://order-processor-python:5002/processpayment', {
-        //     user_id,
-        //     amount
-        // });
 
         return res.json({ message: 'Payment successful' });
     } catch (error) {
