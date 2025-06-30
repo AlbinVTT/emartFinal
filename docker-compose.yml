@@ -32,6 +32,14 @@ services:
     build: ./compliance-service-dotnet
     ports:
       - "5012:80"
+    environment:
+      - PGHOST=postgres
+      - PGPORT=5432
+      - PGDATABASE=emartdb
+      - PGUSER=emartuser
+      - PGPASSWORD=emartpass
+    depends_on:
+      - postgres
 
   ledger-service-java:
     build: ./ledger-service-java
