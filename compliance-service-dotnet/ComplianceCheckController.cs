@@ -1,41 +1,53 @@
-[HttpPost]
-public IActionResult Check([FromBody] UserRequest req)
+using Microsoft.AspNetCore.Mvc;
+using Npgsql;
+
+namespace ComplianceService.Controllers
 {
-    try
+    [ApiController]
+    [Route("[controller]")]
+    public class ComplianceCheckController : ControllerBase
     {
-        var connString = "Host=postgres;Username=emartuser;Password=emartpass;Database=emartdb";
-
-        using var conn = new NpgsqlConnection(connString);
-        conn.Open();
-
-        using var cmd = new NpgsqlCommand(
-            "SELECT kyc_verified, balance FROM users WHERE id = @id", conn);
-        cmd.Parameters.AddWithValue("id", req.Id);
-
-        using var reader = cmd.ExecuteReader();
-
-        if (!reader.Read())
+        [HttpPost]
+        public IActionResult Check([FromBody] UserRequest req)
         {
-            return Unauthorized(new { status = "Rejected", reason = "User not found" });
+            try
+            {
+                var connString = "Host=postgres;Username=emartuser;Password=emartpass;Database=emartdb";
+
+                using var conn = new NpgsqlConnection(connString);
+                conn.Open();
+
+                using var cmd = new NpgsqlCommand(
+                    "SELECT kyc_verified, balance FROM users WHERE id = @id", conn);
+                cmd.Parameters.AddWithValue("id", req.Id);
+
+                using var reader = cmd.ExecuteReader();
+
+                if (!reader.Read())
+                {
+                    return Unauthorized(new { status = "Rejected", reason = "User not found" });
+                }
+
+                bool kycVerified = reader.GetBoolean(0);
+                decimal balance = reader.GetDecimal(1);
+
+                if (!kycVerified)
+                    return BadRequest(new { status = "Rejected", reason = "KYC not verified" });
+
+                if (balance < 100)
+                    return BadRequest(new { status = "Rejected", reason = "Insufficient balance (minimum ₹100 required)" });
+
+                return Ok(new { status = "Approved" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { status = "Error", message = ex.Message });
+            }
         }
 
-        bool kycVerified = reader.GetBoolean(0);
-        decimal balance = reader.GetDecimal(1);
-
-        if (!kycVerified)
+        public class UserRequest
         {
-            return BadRequest(new { status = "Rejected", reason = "KYC not approved" });
+            public string Id { get; set; }
         }
-
-        if (balance < 100)
-        {
-            return BadRequest(new { status = "Rejected", reason = "Insufficient balance" });
-        }
-
-        return Ok(new { status = "Approved" });
-    }
-    catch (Exception ex)
-    {
-        return StatusCode(500, new { status = "Error", message = ex.Message });
     }
 }
