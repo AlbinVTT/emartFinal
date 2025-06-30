@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import ProductList from './ProductList';
@@ -15,6 +15,15 @@ function App() {
   const [order, setOrder] = useState({ items: [], total: 0 });
   const [error, setError] = useState('');
 
+  // Optional: restore login on reload
+  useEffect(() => {
+    const storedUser = localStorage.getItem('username');
+    if (storedUser) {
+      setUsername(storedUser);
+      setIsLoggedIn(true);
+    }
+  }, []);
+
   const login = async () => {
     try {
       const response = await axios.post('/login', {
@@ -24,7 +33,7 @@ function App() {
 
       if (response.data.status === 'success') {
         setIsLoggedIn(true);
-        localStorage.setItem('username', username); // ✅ Store username for later use
+        localStorage.setItem('username', username); // ✅ Store username
         setError('');
       } else {
         setError('❌ Invalid username or password');
@@ -89,8 +98,9 @@ function App() {
     };
 
     try {
-      const paymentResp = await axios.post('/initiatepayment', {
-        user_id: username,
+      // ✅ Fix: use `username` instead of `user_id` here
+      await axios.post('/initiatepayment', {
+        username: username,
         amount: totalAmount
       });
 
