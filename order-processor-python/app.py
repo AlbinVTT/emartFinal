@@ -81,7 +81,7 @@ def submit_order():
     for item in items:
         payload = {
             "user_id": user_id,
-            "product_id": item.get("product_id"),
+            "product_id": str(item.get("product_id")),
             "name": item.get("name"),
             "quantity": item.get("quantity", 1),
             "price": item.get("price", 0.0),
