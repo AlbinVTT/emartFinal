@@ -23,11 +23,12 @@
 
 .product-image {
   width: 100%;
-  height: auto;
-  margin-bottom: 0.5rem;
-  border-radius: 4px;
+  height: 200px;       /* Set a fixed height */
+  object-fit: contain; /* Maintain aspect ratio, no crop */
+  border-radius: 8px;
+  background-color: white; /* Optional for consistency */
+  padding: 8px;        /* Optional if images have uneven whitespace */
 }
-
 .product-card h3 {
   font-size: 1.1rem;
   margin-bottom: 0.25rem;
