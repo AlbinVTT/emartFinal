@@ -58,52 +58,56 @@ function App() {
   };
 
   const handleCheckout = async () => {
-    if (cart.length === 0) {
-      alert("🛒 Cart is empty, cannot checkout.");
-      return;
+  if (cart.length === 0) {
+    alert("🛒 Cart is empty, cannot checkout.");
+    return;
+  }
+
+  const groupedItems = cart.reduce((acc, item) => {
+    if (acc[item.id]) {
+      acc[item.id].quantity += 1;
+    } else {
+      acc[item.id] = { ...item, quantity: 1 };
     }
+    return acc;
+  }, {});
 
-    const groupedItems = cart.reduce((acc, item) => {
-      if (acc[item.id]) {
-        acc[item.id].quantity += 1;
-      } else {
-        acc[item.id] = { ...item, quantity: 1 };
-      }
-      return acc;
-    }, {});
+  const items = Object.values(groupedItems);
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const deliveryFee = 40;
+  const totalAmount = subtotal + deliveryFee;
 
-    const items = Object.values(groupedItems);
-    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const deliveryFee = 40;
-    const totalAmount = subtotal + deliveryFee;
-
-    const orderPayload = {
-      user_id: username,
-      items: items.map(item => ({
-        product_id: item.id || '',
-        name: item.name || '',
-        quantity: item.quantity || 1,
-        price: item.price || 0
-      })),
-      total: totalAmount
-    };
-
-    try {
-      // Use RELATIVE URL here!
-      const response = await axios.post("/submitorder", orderPayload);
-      console.log("✅ Order submitted:", response.data);
-
-      if (response.data.status === 'success') {
-        setOrder({ items, total: totalAmount });
-        setCart([]);
-      } else {
-        alert("Order failed at server.");
-      }
-    } catch (err) {
-      console.error("❌ Order submission failed:", err.message);
-      alert("Order submission failed");
-    }
+  const orderPayload = {
+    user_id: username,
+    items: items.map(item => ({
+      product_id: item.id || '',
+      name: item.name || '',
+      quantity: item.quantity || 1,
+      price: item.price || 0
+    })),
+    total: totalAmount
   };
+
+  try {
+    const paymentResp = await axios.post('/initiatepayment', {
+      user_id: username,
+      amount: totalAmount
+    });
+
+    const orderResp = await axios.post("/submitorder", orderPayload);
+
+    if (orderResp.data.status === 'success') {
+      setOrder({ items, total: totalAmount });
+      setCart([]);
+    } else {
+      alert("Order failed at server.");
+    }
+  } catch (err) {
+    console.error("❌ Checkout failed:", err.message);
+    alert("Checkout failed");
+  }
+};
+
 
   return (
     <Router>
