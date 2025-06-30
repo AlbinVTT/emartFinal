@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import org.json.JSONObject;
 
@@ -35,8 +36,8 @@ public class LedgerService {
             try {
                 JSONObject json = new JSONObject(body.toString());
 
-                String user_id = json.getString("user_id");
-                String product_id = json.getString("product_id");
+                String user_id = String.valueOf(json.get("user_id"));
+                String product_id = String.valueOf(json.get("product_id"));
                 String name = json.getString("name");
                 int quantity = json.getInt("quantity");
                 double price = json.getDouble("price");
@@ -83,19 +84,20 @@ public class LedgerService {
                 conn.close();
 
                 String response = "✅ Order recorded";
-                exchange.sendResponseHeaders(200, response.length());
+                byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, responseBytes.length);
                 OutputStream os = exchange.getResponseBody();
-                os.write(response.getBytes());
+                os.write(responseBytes);
                 os.close();
             } catch (Exception e) {
                 e.printStackTrace();
                 String response = "❌ Error: " + e.getMessage();
-                exchange.sendResponseHeaders(500, response.length());
+                byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(500, responseBytes.length);
                 OutputStream os = exchange.getResponseBody();
-                os.write(response.getBytes());
+                os.write(responseBytes);
                 os.close();
             }
         }
     }
 }
-
