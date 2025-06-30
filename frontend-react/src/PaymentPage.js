@@ -4,13 +4,12 @@ import './PaymentPage.css';
 import confetti from 'canvas-confetti';
 import axios from 'axios';
 
-function PaymentPage({ cartItems, setCart }) {
+function PaymentPage({ cartItems, setCart, setOrder }) {
   const [method, setMethod] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [username, setUsername] = useState('');
   const navigate = useNavigate();
 
-  // Group identical items
   const grouped = cartItems.reduce((acc, item) => {
     if (acc[item.id]) {
       acc[item.id].quantity += 1;
@@ -26,7 +25,6 @@ function PaymentPage({ cartItems, setCart }) {
   const total = subtotal + delivery;
 
   useEffect(() => {
-    // Get username from localStorage or sessionStorage (set in App.js after login)
     const storedUser = localStorage.getItem('username');
     if (storedUser) {
       setUsername(storedUser);
@@ -34,29 +32,35 @@ function PaymentPage({ cartItems, setCart }) {
   }, []);
 
   const handlePayment = () => {
-  setIsProcessing(true);
+    setIsProcessing(true);
 
-  setTimeout(async () => {
-    try {
-      const response = await axios.post('/initiatepayment', {
-        user_id: username,  // ✅ FIXED
-        amount: total
-      });
+    setTimeout(async () => {
+      try {
+        const response = await axios.post('/initiatepayment', {
+          user_id: username,
+          amount: total
+        });
 
-      if (response?.data?.message === 'Payment successful') {
-        confetti({ particleCount: 100, spread: 70 });
-        setCart([]); // clear cart after success
-        navigate('/confirmation');
-      } else {
-        alert("❌ Payment was not successful.");
+        if (response?.data?.message === 'Payment successful') {
+          // Set the order info before navigating
+          setOrder({
+            items,
+            total
+          });
+
+          confetti({ particleCount: 100, spread: 70 });
+          setCart([]);
+          navigate('/confirmation');
+        } else {
+          alert("❌ Payment was not successful.");
+        }
+      } catch (err) {
+        console.error("Payment error:", err.message);
+        alert("❌ Order failed, please try again.");
+        setIsProcessing(false);
       }
-    } catch (err) {
-      console.error("Payment error:", err.message);
-      alert("❌ Order failed, please try again.");
-      setIsProcessing(false);
-    }
-  }, 2000);
-};
+    }, 2000);
+  };
 
   return (
     <div className="payment-wrapper">
