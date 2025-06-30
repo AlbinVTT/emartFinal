@@ -15,7 +15,6 @@ function App() {
   const [order, setOrder] = useState({ items: [], total: 0 });
   const [error, setError] = useState('');
 
-  // Optional: restore login on reload
   useEffect(() => {
     const storedUser = localStorage.getItem('username');
     if (storedUser) {
@@ -33,7 +32,7 @@ function App() {
 
       if (response.data.status === 'success') {
         setIsLoggedIn(true);
-        localStorage.setItem('username', username); // ✅ Store username
+        localStorage.setItem('username', username);
         setError('');
       } else {
         setError('❌ Invalid username or password');
@@ -42,6 +41,13 @@ function App() {
       console.error('Login error:', err);
       setError('❌ Login failed. Backend not reachable?');
     }
+  };
+
+  const logout = () => {
+    setIsLoggedIn(false);
+    setUsername('');
+    setPassword('');
+    localStorage.removeItem('username');
   };
 
   const addToCart = (product) => {
@@ -98,7 +104,6 @@ function App() {
     };
 
     try {
-      // ✅ Fix: use `username` instead of `user_id` here
       await axios.post('/initiatepayment', {
         username: username,
         amount: totalAmount
@@ -128,7 +133,7 @@ function App() {
             <span className="green">M</span>
             <span className="orange">a</span>
             <span className="red">r</span>
-            <span className="purple">t</span>&nbsp;
+            <span className="purple">t</span>
           </h1>
           <input
             type="text"
@@ -159,8 +164,12 @@ function App() {
                 <span className="purple">t</span>
               </h1>
             </Link>
-            <Link to="/" className="nav-link product-link">🛍️ Products</Link>
-            <Link to="/cart" className="nav-link cart-link">🛒 Cart <span className="cart-count">({cart.length})</span></Link>
+
+            <div className="nav-links">
+              <Link to="/" className="nav-link product-link">🛍️ Products</Link>
+              <Link to="/cart" className="nav-link cart-link">🛒 Cart <span className="cart-count">({cart.length})</span></Link>
+              <button className="logout-btn" onClick={logout}>🚪 Logout</button>
+            </div>
           </nav>
 
           <Routes>
