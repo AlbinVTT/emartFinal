@@ -69,15 +69,15 @@ app.post('/initiatepayment', async (req, res) => {
         if (complianceResponse.data.status !== 'Approved') {
             return res.status(400).json({
                 error: 'Compliance check failed',
-                reason: complianceResponse.data.reason || 'Unknown reason'
+                reason: complianceResponse.data.reason || 'Unknown compliance failure'
             });
         }
 
         return res.json({ message: 'Payment successful' });
     } catch (error) {
         console.error("Payment error:", error.message);
-        const reason = error?.response?.data?.reason || 'Payment processing failed';
-        return res.status(500).json({ error: reason });
+        const fallback = error?.response?.data?.reason || error?.response?.data?.error || 'Payment processing failed';
+        return res.status(500).json({ error: fallback });
     }
 });
 app.listen(3001, () => console.log('🌐 API Gateway running on port 3001'));
