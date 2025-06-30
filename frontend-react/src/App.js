@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import ProductList from './ProductList';
 import Cart from './Cart';
 import OrderConfirmation from './OrderConfirmation';
@@ -10,19 +10,18 @@ import axios from 'axios';
 function App() {
   return (
     <Router>
-      <AppContent />
+      <MainApp />
     </Router>
   );
 }
 
-function AppContent() {
+function MainApp() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [cart, setCart] = useState([]);
   const [order, setOrder] = useState({ items: [], total: 0 });
   const [error, setError] = useState('');
-
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,9 +29,8 @@ function AppContent() {
     if (storedUser) {
       setUsername(storedUser);
       setIsLoggedIn(true);
-      navigate('/');
     }
-  }, [navigate]);
+  }, []);
 
   const login = async () => {
     try {
@@ -45,7 +43,7 @@ function AppContent() {
         setIsLoggedIn(true);
         localStorage.setItem('username', username);
         setError('');
-        navigate('/'); // Navigate to products after login
+        navigate('/');
       } else {
         setError('❌ Invalid username or password');
       }
@@ -60,7 +58,7 @@ function AppContent() {
     setUsername('');
     setPassword('');
     localStorage.removeItem('username');
-    navigate('/'); // Ensure redirection to login
+    navigate('/');
   };
 
   const addToCart = (product) => {
@@ -85,115 +83,44 @@ function AppContent() {
     setCart(updatedCart);
   };
 
-  const handleCheckout = async () => {
-    if (cart.length === 0) {
-      alert("🛒 Cart is empty, cannot checkout.");
-      return;
-    }
-
-    const groupedItems = cart.reduce((acc, item) => {
-      if (acc[item.id]) {
-        acc[item.id].quantity += 1;
-      } else {
-        acc[item.id] = { ...item, quantity: 1 };
-      }
-      return acc;
-    }, {});
-
-    const items = Object.values(groupedItems);
-    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const deliveryFee = 40;
-    const totalAmount = subtotal + deliveryFee;
-
-    const orderPayload = {
-      user_id: username,
-      items: items.map(item => ({
-        product_id: item.id || '',
-        name: item.name || '',
-        quantity: item.quantity || 1,
-        price: item.price || 0
-      })),
-      total: totalAmount
-    };
-
-    try {
-      await axios.post('/initiatepayment', {
-        user_id: username,
-        amount: totalAmount
-      });
-
-      const orderResp = await axios.post("/submitorder", orderPayload);
-
-      if (orderResp.data.status === 'success') {
-        setOrder({ items, total: totalAmount });
-        setCart([]);
-      } else {
-        alert("Order failed at server.");
-      }
-    } catch (err) {
-      console.error("❌ Checkout failed:", err.message);
-      alert("Checkout failed");
-    }
-  };
-
-  return (
-    !isLoggedIn ? (
-      <div className="App">
-        <img src="/images/logo.png" alt="eMart Logo" className="logo" />
-        <h1 className="multicolor-title bounce">
-          <span className="blue">e</span>
-          <span className="green">M</span>
-          <span className="orange">a</span>
-          <span className="red">r</span>
-          <span className="purple">t</span>
-        </h1>
-        <input
-          type="text"
-          placeholder="Enter your username"
-          value={username}
-          onChange={e => setUsername(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Enter your password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-        />
-        <button onClick={login}>Login</button>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <p className="register-link">New user? Register here</p>
-      </div>
-    ) : (
-      <div>
-        <nav className="top-nav">
-          <div className="brand">
-            <img src="/images/logo.png" alt="eMart Logo" className="brand-logo" />
-            <div className="brand-title">
-              <span className="blue">e</span>
-              <span className="green">M</span>
-              <span className="orange">a</span>
-              <span className="red">r</span>
-              <span className="purple">t</span>
-            </div>
+  return isLoggedIn ? (
+    <>
+      <nav className="top-nav">
+        <div className="brand">
+          <img src="/images/logo.png" alt="eMart Logo" className="brand-logo" />
+          <div className="brand-title">
+            <span className="blue">e</span><span className="green">M</span><span className="orange">a</span><span className="red">r</span><span className="purple">t</span>
           </div>
+        </div>
+        <div className="nav-links">
+          <button className="nav-link product-link" onClick={() => navigate('/')}>🛍️ Products</button>
+          <button className="nav-link cart-link" onClick={() => navigate('/cart')}>🛒 Cart <span className="cart-count">({cart.length})</span></button>
+          <button className="logout-btn" onClick={logout}>🚪 Logout</button>
+        </div>
+      </nav>
 
-          <div className="nav-links">
-  <Link to="/" className="nav-link product-link">🛍️ Products</Link>
-  <Link to="/cart" className="nav-link cart-link">🛒 Cart <span className="cart-count">({cart.length})</span></Link>
-  <button className="logout-btn" onClick={logout}>🚪 Logout</button>
-</div>
-        </nav>
-
-        <Routes>
-          <Route path="/" element={<ProductList onAddToCart={addToCart} />} />
-          <Route path="/cart" element={<Cart cartItems={cart} onUpdateQuantity={handleUpdateQuantity} />} />
-          <Route path="/payment" element={<PaymentPage cartItems={cart} setCart={setCart} setOrder={setOrder} />} />
-          <Route path="/confirmation" element={<OrderConfirmation order={order} />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </div>
-    )
+      <Routes>
+        <Route path="/" element={<ProductList onAddToCart={addToCart} />} />
+        <Route path="/cart" element={<Cart cartItems={cart} onUpdateQuantity={handleUpdateQuantity} />} />
+        <Route path="/payment" element={<PaymentPage cartItems={cart} setCart={setCart} setOrder={setOrder} />} />
+        <Route path="/confirmation" element={<OrderConfirmation order={order} />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </>
+  ) : (
+    <div className="App">
+      <img src="/images/logo.png" alt="eMart Logo" className="logo" />
+      <h1 className="multicolor-title bounce">
+        <span className="blue">e</span><span className="green">M</span><span className="orange">a</span><span className="red">r</span><span className="purple">t</span>
+      </h1>
+      <input type="text" placeholder="Enter your username" value={username} onChange={e => setUsername(e.target.value)} />
+      <input type="password" placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} />
+      <button onClick={login}>Login</button>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <p className="register-link">New user? Register here</p>
+    </div>
   );
 }
 
 export default App;
+
