@@ -105,7 +105,7 @@ function App() {
 
     try {
       await axios.post('/initiatepayment', {
-        username: username,
+        user_id: username,
         amount: totalAmount
       });
 
@@ -154,16 +154,16 @@ function App() {
       ) : (
         <div>
           <nav className="top-nav">
-            <Link to="/" className="brand">
+            <div className="brand">
               <img src="/images/logo.png" alt="eMart Logo" className="brand-logo" />
-              <h1 className="brand-title bounce">
+              <div className="brand-title">
                 <span className="blue">e</span>
                 <span className="green">M</span>
                 <span className="orange">a</span>
                 <span className="red">r</span>
                 <span className="purple">t</span>
-              </h1>
-            </Link>
+              </div>
+            </div>
 
             <div className="nav-links">
               <Link to="/" className="nav-link product-link">🛍️ Products</Link>
