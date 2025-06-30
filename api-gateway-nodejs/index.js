@@ -53,34 +53,36 @@ app.post("/submitorder", async (req, res) => {
     }
 });
 
-// ✅ Initiate Payment Route
+// ✅ Initiate Payment Route (Updated for DB-driven compliance)
 app.post('/initiatepayment', async (req, res) => {
-    const { username, amount } = req.body;
+    const { user_id, amount } = req.body;
+
+    if (!user_id || typeof amount !== 'number') {
+        return res.status(400).json({ error: "Missing or invalid user_id or amount" });
+    }
 
     try {
-        // Check compliance
-        const complianceResponse = await axios.post('http://compliance:80/compliancecheck', {
-            KycApproved: true,
-            Balance: 1000
+        // Send user_id to Compliance Service (which will query DB)
+        const complianceResponse = await axios.post('http://compliance:80/ComplianceCheck', {
+            user_id
         });
 
         if (complianceResponse.data.status !== 'Approved') {
             return res.status(400).json({ error: 'Compliance check failed' });
         }
 
-        // Process payment
+        // Process payment in Order Processor
         const orderResponse = await axios.post('http://order-processor-python:5002/processpayment', {
-            username,
+            user_id,
             amount
         });
 
         return res.json({ message: 'Payment successful', order: orderResponse.data });
 
     } catch (error) {
-        console.error(error.message);
+        console.error("Payment error:", error.message);
         return res.status(500).json({ error: 'Payment processing failed' });
     }
 });
 
 app.listen(3001, () => console.log('🌐 API Gateway running on port 3001'));
-
