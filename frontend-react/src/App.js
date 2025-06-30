@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom';
 import ProductList from './ProductList';
 import Cart from './Cart';
 import OrderConfirmation from './OrderConfirmation';
 import PaymentPage from './PaymentPage';
 import axios from 'axios';
 
-function App() {
+function AppContent() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -15,13 +15,16 @@ function App() {
   const [order, setOrder] = useState({ items: [], total: 0 });
   const [error, setError] = useState('');
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     const storedUser = localStorage.getItem('username');
     if (storedUser) {
       setUsername(storedUser);
       setIsLoggedIn(true);
+      navigate('/'); // redirect to products if already logged in
     }
-  }, []);
+  }, [navigate]);
 
   const login = async () => {
     try {
@@ -34,6 +37,7 @@ function App() {
         setIsLoggedIn(true);
         localStorage.setItem('username', username);
         setError('');
+        navigate('/'); // 👈 Redirect to Products page
       } else {
         setError('❌ Invalid username or password');
       }
@@ -124,63 +128,70 @@ function App() {
   };
 
   return (
+    !isLoggedIn ? (
+      <div className="App">
+        <img src="/images/logo.png" alt="eMart Logo" className="logo" />
+        <h1 className="multicolor-title bounce">
+          <span className="blue">e</span>
+          <span className="green">M</span>
+          <span className="orange">a</span>
+          <span className="red">r</span>
+          <span className="purple">t</span>
+        </h1>
+        <input
+          type="text"
+          placeholder="Enter your username"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+        />
+        <input
+          type="password"
+          placeholder="Enter your password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+        />
+        <button onClick={login}>Login</button>
+        {error && <p style={{ color: 'red' }}>{error}</p>}
+        <p className="register-link">New user? Register here</p>
+      </div>
+    ) : (
+      <div>
+        <nav className="top-nav">
+          <div className="brand">
+            <img src="/images/logo.png" alt="eMart Logo" className="brand-logo" />
+            <div className="brand-title">
+              <span className="blue">e</span>
+              <span className="green">M</span>
+              <span className="orange">a</span>
+              <span className="red">r</span>
+              <span className="purple">t</span>
+            </div>
+          </div>
+
+          <div className="nav-links">
+            <Link to="/" className="nav-link product-link">🛍️ Products</Link>
+            <Link to="/cart" className="nav-link cart-link">🛒 Cart <span className="cart-count">({cart.length})</span></Link>
+            <button className="logout-btn" onClick={logout}>🚪 Logout</button>
+          </div>
+        </nav>
+
+        <Routes>
+          <Route path="/" element={<ProductList onAddToCart={addToCart} />} />
+          <Route path="/cart" element={<Cart cartItems={cart} onUpdateQuantity={handleUpdateQuantity} />} />
+          <Route path="/payment" element={<PaymentPage cartItems={cart} setCart={setCart} setOrder={setOrder} />} />
+          <Route path="/confirmation" element={<OrderConfirmation order={order} />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </div>
+    )
+  );
+}
+
+// ⛳ Wrapping App with Router for `useNavigate`
+function App() {
+  return (
     <Router>
-      {!isLoggedIn ? (
-        <div className="App">
-          <img src="/images/logo.png" alt="eMart Logo" className="logo" />
-          <h1 className="multicolor-title bounce">
-            <span className="blue">e</span>
-            <span className="green">M</span>
-            <span className="orange">a</span>
-            <span className="red">r</span>
-            <span className="purple">t</span>
-          </h1>
-          <input
-            type="text"
-            placeholder="Enter your username"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-          />
-          <button onClick={login}>Login</button>
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-          <p className="register-link">New user? Register here</p>
-        </div>
-      ) : (
-        <div>
-          <nav className="top-nav">
-            <div className="brand">
-              <img src="/images/logo.png" alt="eMart Logo" className="brand-logo" />
-              <div className="brand-title">
-                <span className="blue">e</span>
-                <span className="green">M</span>
-                <span className="orange">a</span>
-                <span className="red">r</span>
-                <span className="purple">t</span>
-              </div>
-            </div>
-
-            <div className="nav-links">
-              <Link to="/" className="nav-link product-link">🛍️ Products</Link>
-              <Link to="/cart" className="nav-link cart-link">🛒 Cart <span className="cart-count">({cart.length})</span></Link>
-              <button className="logout-btn" onClick={logout}>🚪 Logout</button>
-            </div>
-          </nav>
-
-          <Routes>
-            <Route path="/" element={<ProductList onAddToCart={addToCart} />} />
-            <Route path="/cart" element={<Cart cartItems={cart} onUpdateQuantity={handleUpdateQuantity} />} />
-            <Route path="/payment" element={<PaymentPage cartItems={cart} setCart={setCart} setOrder={setOrder} />} />
-            <Route path="/confirmation" element={<OrderConfirmation order={order} />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </div>
-      )}
+      <AppContent />
     </Router>
   );
 }
