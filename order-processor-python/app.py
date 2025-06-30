@@ -32,17 +32,21 @@ CREATE TABLE IF NOT EXISTS users (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(100),
     email VARCHAR(100),
-    password VARCHAR(100)
+    password VARCHAR(100),
+    kyc_approved BOOLEAN DEFAULT FALSE,
+    balance NUMERIC DEFAULT 0.0
 )
 """)
 cursor.execute("SELECT COUNT(*) FROM users")
 if cursor.fetchone()[0] == 0:
     cursor.execute("""
-    INSERT INTO users (id, name, email, password) VALUES
-    ('u1', 'Alice', 'alice@example.com', 'pass123')
+    INSERT INTO users (id, name, email, password, kyc_approved, balance) VALUES
+    ('u1', 'Alice', 'alice@example.com', 'pass123', TRUE, 50000),
+    ('u2', 'Bob', 'bob@example.com', 'pass123', FALSE, 20000),
+    ('u3', 'Charlie', 'charlie@example.com', 'pass123', TRUE, 8000)
     """)
     conn.commit()
-    print("🧑‍💻 Default user seeded")
+    print("🧑‍💻 Default users seeded")
 cursor.close()
 
 # ✅ User Login Route
@@ -63,6 +67,24 @@ def validate_user():
         return jsonify({"status": "success", "user": user_id})
     else:
         return jsonify({"status": "failed"}), 401
+
+# ✅ Compliance check fetch: Get KYC and balance
+@app.route("/userdetails/<user_id>", methods=["GET"])
+def get_user_details(user_id):
+    cursor = conn.cursor()
+    cursor.execute("SELECT kyc_approved, balance FROM users WHERE id = %s", (user_id,))
+    result = cursor.fetchone()
+    cursor.close()
+
+    if result:
+        kyc, balance = result
+        return jsonify({
+            "user_id": user_id,
+            "kyc_approved": kyc,
+            "balance": float(balance)
+        })
+    else:
+        return jsonify({"error": "User not found"}), 404
 
 # ✅ Submit Order Route with retry logic for Java Ledger
 @app.route("/submitorder", methods=["POST"])
