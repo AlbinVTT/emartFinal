@@ -1,6 +1,101 @@
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpExchange;
+
+import java.io.*;
+import java.net.InetSocketAddress;
+import java.sql.*;
+import org.json.JSONObject;
 
 public class LedgerService {
-    public static void main(String[] args) {
-        System.out.println("Ledger Service: Transaction recorded.");
+    public static void main(String[] args) throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        server.createContext("/record", new OrderHandler());
+        server.setExecutor(null); // creates a default executor
+        System.out.println("🚀 Ledger service running on port 8080");
+        server.start();
+    }
+
+    static class OrderHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(405, -1); // Method Not Allowed
+                return;
+            }
+
+            InputStream is = exchange.getRequestBody();
+            StringBuilder body = new StringBuilder();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                body.append(line);
+            }
+
+            try {
+                JSONObject json = new JSONObject(body.toString());
+
+                String user_id = json.getString("user_id");
+                String product_id = json.getString("product_id");
+                String name = json.getString("name");
+                int quantity = json.getInt("quantity");
+                double price = json.getDouble("price");
+                double total_amount = json.getDouble("total_amount");
+
+                String host = System.getenv().getOrDefault("PGHOST", "localhost");
+                String port = System.getenv().getOrDefault("PGPORT", "5432");
+                String db = System.getenv().getOrDefault("PGDATABASE", "emartdb");
+                String user = System.getenv().getOrDefault("PGUSER", "emartuser");
+                String password = System.getenv().getOrDefault("PGPASSWORD", "emartpass");
+
+                String url = "jdbc:postgresql://" + host + ":" + port + "/" + db;
+
+                Connection conn = DriverManager.getConnection(url, user, password);
+
+                // Ensure table exists
+                Statement tableCheck = conn.createStatement();
+                tableCheck.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS orders (
+                        id SERIAL PRIMARY KEY,
+                        user_id TEXT,
+                        product_id TEXT,
+                        name TEXT,
+                        quantity INTEGER,
+                        price NUMERIC,
+                        total_amount NUMERIC,
+                        order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """);
+
+                PreparedStatement stmt = conn.prepareStatement("""
+                    INSERT INTO orders (user_id, product_id, name, quantity, price, total_amount)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """);
+                stmt.setString(1, user_id);
+                stmt.setString(2, product_id);
+                stmt.setString(3, name);
+                stmt.setInt(4, quantity);
+                stmt.setDouble(5, price);
+                stmt.setDouble(6, total_amount);
+
+                stmt.executeUpdate();
+                stmt.close();
+                conn.close();
+
+                String response = "✅ Order recorded";
+                exchange.sendResponseHeaders(200, response.length());
+                OutputStream os = exchange.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+                String response = "❌ Error: " + e.getMessage();
+                exchange.sendResponseHeaders(500, response.length());
+                OutputStream os = exchange.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+            }
+        }
     }
 }
+
