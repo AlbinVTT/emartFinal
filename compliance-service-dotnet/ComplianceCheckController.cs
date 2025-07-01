@@ -34,8 +34,8 @@ namespace ComplianceService.Controllers
                 if (!kycVerified)
                     return BadRequest(new { status = "Rejected", reason = "KYC not verified" });
 
-                if (balance < 100)
-                    return BadRequest(new { status = "Rejected", reason = "Insufficient balance (minimum ₹100 required)" });
+                if (balance < req.CartTotal)
+                    return BadRequest(new { status = "Rejected", reason = $"Insufficient balance. Available: ₹{balance}, Required: ₹{req.CartTotal}" });
 
                 return Ok(new { status = "Approved" });
             }
@@ -48,6 +48,7 @@ namespace ComplianceService.Controllers
         public class UserRequest
         {
             public string Id { get; set; }
+            public decimal CartTotal { get; set; }  // 🆕 Added cart total
         }
     }
 }
