@@ -94,6 +94,7 @@ def get_user_details(user_id):
         return jsonify({"error": "User not found"}), 404
 
 # ✅ Submit Order Route with retry logic for Java Ledger
+# ✅ Submit Order Route with retry logic for Java Ledger
 @app.route("/submitorder", methods=["POST"])
 def submit_order():
     data = request.json
@@ -120,15 +121,15 @@ def submit_order():
         for attempt in range(3):
             try:
                 response = requests.post(f"{LEDGER_URL}/record", json=payload, timeout=5)
+                print(f"📤 Attempt {attempt+1} → Status: {response.status_code}, Response: {response.text}")
                 if response.ok:
-                    print(f"📤 Item sent to Ledger (attempt {attempt+1}):", payload)
                     success_count += 1
                     break
                 else:
-                    print(f"⚠️ Ledger response error (attempt {attempt+1}): {response.status_code}")
+                    print(f"⚠️ Ledger error on attempt {attempt+1}: {response.status_code} - {response.text}")
             except Exception as e:
-                print(f"❌ Ledger request failed (attempt {attempt+1}):", str(e))
-            time.sleep(2 ** attempt)  # 1s, 2s, 4s backoff
+                print(f"❌ Ledger request failed (attempt {attempt+1}): {e}")
+            time.sleep(2 ** attempt)  # exponential backoff: 1s, 2s, 4s
 
     return jsonify({
         "status": "success" if success_count == len(items) else "partial",
