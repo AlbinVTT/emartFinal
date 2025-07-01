@@ -63,7 +63,8 @@ app.post('/initiatepayment', async (req, res) => {
 
     try {
         const complianceResponse = await axios.post('http://compliance:80/ComplianceCheck', {
-            id: user_id
+            id: user_id,
+            cartTotal: amount  // ✅ Send cart total to compliance check
         });
 
         if (complianceResponse.data.status !== 'Approved') {
@@ -80,4 +81,5 @@ app.post('/initiatepayment', async (req, res) => {
         return res.status(500).json({ error: fallback });
     }
 });
+
 app.listen(3001, () => console.log('🌐 API Gateway running on port 3001'));
