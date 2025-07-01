@@ -44,6 +44,19 @@ function PaymentPage({ cartItems, setCart, setOrder }) {
         });
 
         if (response?.data?.message === 'Payment successful') {
+          // 🟢 After payment, submit order to backend
+          await axios.post('/submitorder', {
+            user_id: username,
+            items: items.map(item => ({
+              product_id: item.id,
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              total_amount: total
+            })),
+            total
+          });
+
           setOrder({ items, total });
           confetti({ particleCount: 100, spread: 70 });
           setCart([]);
@@ -64,7 +77,7 @@ function PaymentPage({ cartItems, setCart, setOrder }) {
   const showErrorPopup = (message) => {
     setPopupMessage(message);
     setShowPopup(true);
-    setTimeout(() => setShowPopup(false), 3000); // Auto-close after 3s
+    setTimeout(() => setShowPopup(false), 3000);
   };
 
   return (
@@ -137,7 +150,6 @@ function PaymentPage({ cartItems, setCart, setOrder }) {
 
       {isProcessing && <div className="payment-progress"><div className="bar" /></div>}
 
-      {/* 🔔 Compliance Popup */}
       {showPopup && (
         <div className="popup-overlay">
           <div className="popup-content">
