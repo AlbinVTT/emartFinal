@@ -43,6 +43,8 @@ public class LedgerService {
                 double price = json.getDouble("price");
                 double total_amount = json.getDouble("total_amount");
 
+                System.out.println("📥 Received order for user: " + user_id + " → " + name + " × " + quantity);
+
                 String host = System.getenv().getOrDefault("PGHOST", "localhost");
                 String port = System.getenv().getOrDefault("PGPORT", "5432");
                 String db = System.getenv().getOrDefault("PGDATABASE", "emartdb");
@@ -50,8 +52,10 @@ public class LedgerService {
                 String password = System.getenv().getOrDefault("PGPASSWORD", "emartpass");
 
                 String url = "jdbc:postgresql://" + host + ":" + port + "/" + db;
+                System.out.println("🔗 Connecting to DB: " + url);
 
                 Connection conn = DriverManager.getConnection(url, user, password);
+                System.out.println("✅ Connected to Postgres from Java");
 
                 // Ensure table exists
                 Statement tableCheck = conn.createStatement();
@@ -67,7 +71,9 @@ public class LedgerService {
                         order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 """);
+                System.out.println("🛠️ Orders table ensured");
 
+                // Insert order
                 PreparedStatement stmt = conn.prepareStatement("""
                     INSERT INTO orders (user_id, product_id, name, quantity, price, total_amount)
                     VALUES (?, ?, ?, ?, ?, ?)
@@ -79,7 +85,9 @@ public class LedgerService {
                 stmt.setDouble(5, price);
                 stmt.setDouble(6, total_amount);
 
-                stmt.executeUpdate();
+                int inserted = stmt.executeUpdate();
+                System.out.println("✅ Inserted rows: " + inserted);
+
                 stmt.close();
                 conn.close();
 
@@ -89,8 +97,11 @@ public class LedgerService {
                 OutputStream os = exchange.getResponseBody();
                 os.write(responseBytes);
                 os.close();
+
             } catch (Exception e) {
+                System.err.println("❌ Exception occurred:");
                 e.printStackTrace();
+
                 String response = "❌ Error: " + e.getMessage();
                 byte[] responseBytes = response.getBytes(StandardCharsets.UTF_8);
                 exchange.sendResponseHeaders(500, responseBytes.length);
