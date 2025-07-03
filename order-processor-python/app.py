@@ -49,17 +49,34 @@ CREATE TABLE IF NOT EXISTS users (
     balance NUMERIC DEFAULT 0.0
 )
 """)
-cursor.execute("SELECT COUNT(*) FROM users")
-if cursor.fetchone()[0] == 0:
-    cursor.execute("""
-    INSERT INTO users (id, name, email, password, kyc_verified, balance) VALUES
-    ('u1', 'Alice', 'alice@example.com', 'pass123', TRUE, 50000),
-    ('u2', 'Bob', 'bob@example.com', 'pass123', FALSE, 20000),
-    ('u3', 'Charlie', 'charlie@example.com', 'pass123', TRUE, 8000)
-    """)
-    conn.commit()
-    print("🧑‍💻 Default users seeded")
+# ✅ Idempotent user seeding
+users_to_seed = [
+    ('u1', 'Alice', 'alice@example.com', 'pass123', True, 50000),
+    ('u2', 'Bob', 'bob@example.com', 'pass123', False, 20000),
+    ('u3', 'Charlie', 'charlie@example.com', 'pass123', True, 8000),
+    ('user4', 'David', 'david@example.com', 'pass123', True, 15000),
+    ('user5', 'Eva', 'eva@example.com', 'pass123', True, 20000),
+    ('user6', 'Frank', 'frank@example.com', 'pass123', False, 5000),
+    ('user7', 'Grace', 'grace@example.com', 'pass123', True, 30000)
+]
+
+cursor = conn.cursor()
+
+for user in users_to_seed:
+    cursor.execute("SELECT 1 FROM users WHERE id = %s", (user[0],))
+    if cursor.fetchone() is None:
+        cursor.execute("""
+            INSERT INTO users (id, name, email, password, kyc_verified, balance)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, user)
+        print(f"🆕 Seeded user: {user[0]}")
+    else:
+        print(f"✅ User already exists: {user[0]}")
+
+conn.commit()
 cursor.close()
+print("🌱 User seeding complete")
+
 
 # ✅ Health check
 @app.route("/health", methods=["GET"])
