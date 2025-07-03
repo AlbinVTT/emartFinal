@@ -1,5 +1,6 @@
 import os
 import time
+import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2
@@ -7,6 +8,15 @@ import requests
 
 app = Flask(__name__)
 CORS(app)
+
+# ✅ Load Scenario Config
+scenario_config = {}
+try:
+    with open('scenario_config.json') as f:
+        scenario_config = json.load(f)
+    print("📖 Loaded scenario config:", scenario_config)
+except Exception as e:
+    print(f"⚠️ Could not load scenario_config.json: {e}")
 
 # ✅ Database connection with retry logic
 conn = None
@@ -63,6 +73,12 @@ def validate_user():
     user_id = data.get("user_id")
     password = data.get("password")
 
+    # 🔥 Check scenario for login_delay
+    scenario = scenario_config.get(user_id)
+    if scenario == "login_delay":
+        print(f"⏳ Simulating login delay for {user_id}")
+        time.sleep(5)  # Simulate 5-second delay
+
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM users WHERE id = %s AND password = %s", (user_id, password))
     user = cursor.fetchone()
@@ -93,7 +109,6 @@ def get_user_details(user_id):
     else:
         return jsonify({"error": "User not found"}), 404
 
-# ✅ Submit Order Route with retry logic for Java Ledger
 # ✅ Submit Order Route with retry logic for Java Ledger
 @app.route("/submitorder", methods=["POST"])
 def submit_order():
