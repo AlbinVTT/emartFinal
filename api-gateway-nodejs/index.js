@@ -1,10 +1,25 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// ✅ Load Scenario Config
+let scenarioConfig = {};
+try {
+    scenarioConfig = JSON.parse(fs.readFileSync('./scenario_config.json'));
+    console.log("📖 Loaded scenario config:", scenarioConfig);
+} catch (err) {
+    console.error("⚠️ Could not load scenario_config.json:", err.message);
+}
+
+// ✅ Helper: Get scenario for a user
+function getScenario(user_id) {
+    return scenarioConfig[user_id] || "normal_flow";
+}
 
 // ✅ Login Route
 app.post("/login", async (req, res) => {
@@ -30,6 +45,14 @@ app.get("/products", async (req, res) => {
 
 // ✅ Submit Order Route
 app.post("/submitorder", async (req, res) => {
+    const user_id = req.body.user_id;
+    const scenario = getScenario(user_id);
+
+    if (scenario === "payment_slow") {
+        console.log(`⏳ Simulating payment slowness for ${user_id}`);
+        await new Promise(resolve => setTimeout(resolve, 7000)); // 7s delay
+    }
+
     try {
         const { user_id, items, total } = req.body;
 
@@ -56,9 +79,16 @@ app.post("/submitorder", async (req, res) => {
 // ✅ Initiate Payment Route (Fixed 'id' field)
 app.post('/initiatepayment', async (req, res) => {
     const { user_id, amount } = req.body;
+    const scenario = getScenario(user_id);
 
     if (!user_id || typeof amount !== 'number') {
         return res.status(400).json({ error: "Missing or invalid user_id or amount" });
+    }
+
+    // 🔥 Simulate gateway timeout
+    if (scenario === "gateway_timeout") {
+        console.log(`💥 Simulating gateway timeout for ${user_id}`);
+        return res.status(504).json({ error: "Gateway Timeout" });
     }
 
     try {
