@@ -40,24 +40,21 @@ function PaymentPage({ cartItems, setCart, setOrder }) {
       try {
         const response = await axios.post('/initiatepayment', {
           user_id: username,
-          amount: total
+          amount: total,
+          items: items.map(item => ({
+            product_id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price
+          }))
         });
 
-        if (response?.data?.message === 'Payment successful') {
-          // 🟢 After payment, submit order to backend
-          await axios.post('/submitorder', {
-            user_id: username,
-            items: items.map(item => ({
-              product_id: item.id,
-              name: item.name,
-              quantity: item.quantity,
-              price: item.price,
-              total_amount: total
-            })),
-            total
+        if (response?.data?.message === 'Payment and order successful') {
+          setOrder({
+            items,
+            total,
+            order_id: response?.data?.order?.order_id || null // in case API sends order_id
           });
-
-          setOrder({ items, total });
           confetti({ particleCount: 100, spread: 70 });
           setCart([]);
           navigate('/confirmation');
