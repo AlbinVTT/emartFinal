@@ -81,6 +81,12 @@ app.post('/initiatepayment', async (req, res) => {
     const { user_id, amount, items } = req.body; // ⬅️ Added items here
     const scenario = getScenario(user_id);
 
+    // 🔥 Simulate payment slowness here
+    if (scenario === "payment_slow") {
+        console.log(`⏳ Simulating payment slowness for ${user_id}`);
+        await new Promise(resolve => setTimeout(resolve, 9000)); // 9s delay
+    }
+
     if (!user_id || typeof amount !== 'number' || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Missing or invalid user_id, amount, or items" });
     }
