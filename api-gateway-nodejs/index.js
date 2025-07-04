@@ -76,13 +76,13 @@ app.post("/submitorder", async (req, res) => {
     }
 });
 
-// ✅ Initiate Payment Route (Fixed 'id' field)
+// ✅ Initiate Payment Route (Call Submit Order)
 app.post('/initiatepayment', async (req, res) => {
-    const { user_id, amount } = req.body;
+    const { user_id, amount, items } = req.body; // ⬅️ Added items here
     const scenario = getScenario(user_id);
 
-    if (!user_id || typeof amount !== 'number') {
-        return res.status(400).json({ error: "Missing or invalid user_id or amount" });
+    if (!user_id || typeof amount !== 'number' || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Missing or invalid user_id, amount, or items" });
     }
 
     // 🔥 Simulate gateway timeout
@@ -92,9 +92,10 @@ app.post('/initiatepayment', async (req, res) => {
     }
 
     try {
+        // ✅ Step 1: Compliance Check
         const complianceResponse = await axios.post('http://compliance:80/ComplianceCheck', {
             id: user_id,
-            cartTotal: amount  // ✅ Send cart total to compliance check
+            cartTotal: amount
         });
 
         if (complianceResponse.data.status !== 'Approved') {
@@ -104,10 +105,27 @@ app.post('/initiatepayment', async (req, res) => {
             });
         }
 
-        return res.json({ message: 'Payment successful' });
+        console.log(`✅ Compliance approved for user: ${user_id}`);
+
+        // ✅ Step 2: Submit Order
+        const submitOrderResponse = await axios.post("http://order-processor-python:5002/submitorder", {
+            user_id,
+            items,
+            total: amount
+        });
+
+        console.log(`📦 Order submitted for user: ${user_id}`);
+
+        // ✅ Return combined result
+        return res.json({
+            message: 'Payment and order successful',
+            compliance: complianceResponse.data,
+            order: submitOrderResponse.data
+        });
+
     } catch (error) {
-        console.error("Payment error:", error.message);
-        const fallback = error?.response?.data?.reason || error?.response?.data?.error || 'Payment processing failed';
+        console.error("Payment/Order error:", error.message);
+        const fallback = error?.response?.data?.reason || error?.response?.data?.error || 'Payment/Order processing failed';
         return res.status(500).json({ error: fallback });
     }
 });
