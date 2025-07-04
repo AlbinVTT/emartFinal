@@ -12,15 +12,20 @@ function OrderConfirmation({ order }) {
   const subtotal = totalAmount >= deliveryFee ? totalAmount - deliveryFee : totalAmount;
 
   useEffect(() => {
-    const random = Math.floor(100000 + Math.random() * 900000);
-    setOrderId(`EM${random}`);
+    // ✅ Use API order_id if present, else generate random
+    if (order?.order_id) {
+      setOrderId(order.order_id);
+    } else {
+      const random = Math.floor(100000 + Math.random() * 900000);
+      setOrderId(`EM${random}`);
+    }
 
     confetti({
       particleCount: 120,
       spread: 80,
       origin: { y: 0.6 }
     });
-  }, []);
+  }, [order?.order_id]);
 
   const estimatedDelivery = () => {
     const date = new Date();
