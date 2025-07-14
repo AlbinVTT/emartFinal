@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const fs = require('fs');
+const nodemailer = require('nodemailer');
 
 const app = express();
 app.use(cors());
@@ -20,6 +21,65 @@ try {
 function getScenario(user_id) {
     return scenarioConfig[user_id] || "normal_flow";
 }
+
+// ✅ In-memory OTP store
+const otpStore = {};
+
+// ✅ Configure nodemailer transporter
+const transporter = nodemailer.createTransport({
+    service: 'gmail', // Or any email provider
+    auth: {
+        user: 'youremail@gmail.com', // Replace with your email
+        pass: 'yourapppassword' // Replace with app password (not your email password)
+    }
+});
+
+// ✅ Send OTP Route
+app.post("/send-otp", async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStore[email] = otp;
+
+    // Send email
+    try {
+        await transporter.sendMail({
+            from: '"eMart OTP" <youremail@gmail.com>',
+            to: email,
+            subject: "Your eMart OTP",
+            text: `Your OTP is: ${otp}. It will expire in 5 minutes.`
+        });
+
+        console.log(`📧 Sent OTP ${otp} to ${email}`);
+        res.json({ message: "OTP sent successfully" });
+    } catch (error) {
+        console.error("Error sending OTP email:", error.message);
+        res.status(500).json({ message: "Failed to send OTP email" });
+    }
+});
+
+// ✅ Verify OTP Route
+app.post("/verify-otp", (req, res) => {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+        return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const storedOtp = otpStore[email];
+    if (storedOtp === otp) {
+        // OTP verified, remove it from store
+        delete otpStore[email];
+        console.log(`✅ OTP verified for ${email}`);
+        return res.json({ message: "OTP verified successfully" });
+    } else {
+        console.log(`❌ Invalid OTP for ${email}`);
+        return res.status(400).json({ message: "Invalid OTP" });
+    }
+});
 
 // ✅ Login Route
 app.post("/login", async (req, res) => {
