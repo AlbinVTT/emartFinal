@@ -25,12 +25,14 @@ function getScenario(user_id) {
 // ✅ In-memory OTP store
 const otpStore = {};
 
-// ✅ Configure nodemailer transporter
+// ✅ Configure nodemailer transporter for Office365 SMTP
 const transporter = nodemailer.createTransport({
-    service: 'gmail', // Or any email provider
+    host: 'smtp.office365.com',
+    port: 587,
+    secure: false, // STARTTLS
     auth: {
-        user: 'youremail@gmail.com', // Replace with your email
-        pass: 'yourapppassword' // Replace with app password (not your email password)
+        user: 'ignio1.platformtesting@ext.digitate.com', // 🔥 Replace with your Office365 email
+        pass: 'Ignio@12345' // 🔥 Replace with app password if MFA enabled
     }
 });
 
@@ -45,11 +47,11 @@ app.post("/send-otp", async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     otpStore[email] = otp;
 
-    // Send email
+    // Send email via Office365
     try {
         await transporter.sendMail({
-            from: '"eMart OTP" <youremail@gmail.com>',
-            to: email,
+            from: '"eMart OTP" ignio1.platformtesting@ext.digitate.com', // 🔥 Replace with your Office365 email
+            to: 'ignio1.platformtesting@ext.digitate.com',
             subject: "Your eMart OTP",
             text: `Your OTP is: ${otp}. It will expire in 5 minutes.`
         });
@@ -80,6 +82,8 @@ app.post("/verify-otp", (req, res) => {
         return res.status(400).json({ message: "Invalid OTP" });
     }
 });
+
+// 🔥 EXISTING ROUTES BELOW 🔥
 
 // ✅ Login Route
 app.post("/login", async (req, res) => {
